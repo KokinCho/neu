@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEU ノイ | オンライン対戦</title>
+<meta name="description" content="合計101を超えたら負け。ルームコードで友達と遊べる、カードゲーム「ノイ」のクローン。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+  <div id="toast" role="status"></div>
+
+  <section id="home" class="panel">
+    <h1 class="logo">NEU<span>ノイ</span></h1>
+    <p class="lead">合計が <b>101</b> を超えたら負け。<br>最後までチップを残した人が勝ち。</p>
+    <div class="card">
+      <label for="name">ニックネーム</label>
+      <input id="name" type="text" maxlength="10" placeholder="なまえ" autocomplete="nickname">
+      <button id="btn-create" class="btn primary">ルームを作る</button>
+    </div>
+    <div class="card">
+      <label for="code">ルームコードで参加</label>
+      <div class="row">
+        <input id="code" type="text" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off">
+        <button id="btn-join" class="btn">参加</button>
+      </div>
+    </div>
+    <details class="card rules">
+      <summary>ルール</summary>
+      <p>手番では手札を1枚出して合計を更新し、山札から1枚引いて手札を3枚に戻します。出した結果、合計が<b>101を超えたらバースト</b>。チップを1枚失います。チップが無くなったら脱落、最後の1人が勝者です。</p>
+      <ul>
+        <li><b>+数字 / −数字</b>:合計に加減算</li>
+        <li><b>101</b>:合計を強制的に101にする</li>
+        <li><b>PASS</b>:合計を変えずに手番を渡す</li>
+        <li><b>TURN</b>:回る向きが逆になる</li>
+        <li><b>SHOT</b>:次に出す人を指名</li>
+        <li><b>DOUBLE</b>:次の人は2枚続けて出す</li>
+      </ul>
+    </details>
+  </section>
+
+  <section id="view" class="panel" hidden></section>
+</main>
+<script src="client.js"></script>
+</body>
+</html>

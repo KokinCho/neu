@@ -1,0 +1,95 @@
+:root{
+  --wood-dark:#2b1a10; --wood:#4a2f1c; --paper:#f3e7cf; --paper-2:#e6d4ae; --ink:#2a1b10;
+  --gold:#d9a441; --red:#b3392f; --blue:#2d6a8a; --green:#2f6b45; --purple:#6b3f8f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:'Noto Sans JP',sans-serif; color:var(--paper);
+  background:repeating-linear-gradient(92deg,rgba(0,0,0,.12) 0 2px,transparent 2px 9px),
+             radial-gradient(ellipse at 50% 20%,#6a4528,var(--wood-dark) 75%);
+  display:flex; justify-content:center; padding:18px 12px 60px;
+}
+#app{width:100%; max-width:640px}
+.panel{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.logo{font-family:'Shippori Mincho',serif; font-size:4rem; text-align:center; margin:6px 0 0; letter-spacing:.2em; color:var(--gold); text-shadow:0 4px 0 #000a}
+.logo span{display:block; font-size:1rem; letter-spacing:.6em; color:var(--paper)}
+.lead{text-align:center; opacity:.9; margin:10px 0 20px; line-height:1.7}
+.lead b{color:var(--gold); font-size:1.2em}
+.card{background:linear-gradient(160deg,var(--paper),var(--paper-2)); color:var(--ink); border-radius:14px; padding:18px; margin-bottom:14px;
+  box-shadow:0 7px 0 #0006,0 12px 26px #0008, inset 0 0 0 2px #fff6, inset 0 0 0 5px #8a6a3a33}
+.card h2{font-family:'Shippori Mincho',serif; margin:0 0 10px; font-size:1.1rem}
+label{display:block; font-weight:700; margin-bottom:6px; font-size:.9rem}
+input[type=text]{width:100%; padding:10px 12px; font-size:1rem; border-radius:8px; border:2px solid #8a6a3a; background:#fffaf0; color:var(--ink); font-family:inherit; margin-bottom:10px}
+#code{text-transform:uppercase; letter-spacing:.4em; text-align:center; margin:0; font-weight:700}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.btn{font-family:inherit; font-weight:700; font-size:1rem; padding:11px 20px; border-radius:10px; border:2px solid #8a6a3a; background:#e8d9b8; color:var(--ink); cursor:pointer; box-shadow:0 4px 0 #0005; transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-2px)} .btn:active{transform:translateY(2px); box-shadow:0 1px 0 #0005}
+.btn:disabled{opacity:.5; cursor:not-allowed; transform:none}
+.btn.primary{width:100%; background:linear-gradient(var(--gold),#b8842a); border:none; font-size:1.1rem}
+.btn.small{padding:5px 10px; font-size:.8rem; box-shadow:0 2px 0 #0005}
+.rules summary{cursor:pointer; font-weight:700} .rules p,.rules li{font-size:.9rem; line-height:1.7}
+.big-code{font-family:'Shippori Mincho',serif; font-size:3rem; letter-spacing:.3em; text-align:center; color:var(--red); margin:0}
+.center{text-align:center}
+.plist{list-style:none; padding:0; margin:10px 0}
+.plist li{display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px dashed #8a6a3a55}
+.plist .nm{flex:1; font-weight:700}
+.tag{font-size:.7rem; padding:2px 8px; border-radius:99px; background:var(--wood); color:var(--paper); font-weight:700}
+.tag.host{background:var(--gold); color:var(--ink)} .tag.cpu{background:var(--blue)}
+.setting{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #8a6a3a55; gap:10px}
+.setting small{display:block; opacity:.7}
+.setting input[type=checkbox]{width:22px; height:22px; accent-color:var(--red)}
+select{padding:6px; border-radius:6px; border:2px solid #8a6a3a; background:#fffaf0; font-family:inherit}
+
+/* table */
+.seats{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:12px}
+.seat{background:#0004; border:2px solid #fff2; border-radius:12px; padding:8px 12px; min-width:92px; text-align:center; transition:.25s}
+.seat.cur{border-color:var(--gold); background:#d9a44133; box-shadow:0 0 18px #d9a44188; transform:translateY(-3px)}
+.seat.dead{opacity:.35}
+.seat .n{font-weight:700; font-size:.9rem}
+.chips{display:flex; justify-content:center; gap:4px; margin:4px 0}
+.chip{width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 35%30%,#ffe9a8,var(--gold)); border:2px solid #7a5513}
+.chip.off{background:#0003; border-color:#fff3}
+.seat .hc{font-size:.7rem; opacity:.7}
+.felt{background:radial-gradient(ellipse at center,#2f6b45,#1d4630 80%); border:6px solid #5a3a20; border-radius:20px; padding:16px; text-align:center; box-shadow:inset 0 0 40px #0008,0 10px 24px #0008}
+.total-label{font-size:.8rem; letter-spacing:.3em; opacity:.8}
+.total{font-family:'Shippori Mincho',serif; font-size:5.5rem; font-weight:800; line-height:1; color:#fff; text-shadow:0 4px 0 #0006; transition:color .3s}
+.total.pop{animation:pop .35s}
+@keyframes pop{40%{transform:scale(1.18)}}
+.total.warn{color:#ffd37a} .total.danger{color:#ff7b6b}
+.gauge{height:12px; background:#0005; border-radius:99px; overflow:hidden; margin:10px 6px 4px}
+.gauge div{height:100%; background:linear-gradient(90deg,#6fcf8d,#e8c25a 70%,#e8554a); transition:width .5s}
+.gauge-lbl{display:flex; justify-content:space-between; font-size:.7rem; opacity:.7; padding:0 6px}
+.dir{font-size:.85rem; margin-top:8px; opacity:.9}
+.log{margin-top:10px; font-size:.82rem; text-align:left; max-height:110px; overflow:hidden; display:flex; flex-direction:column-reverse}
+.log div{padding:2px 0; opacity:.85} .log div:first-child{opacity:1; font-weight:700}
+.log .c{display:inline-block; min-width:44px; text-align:center; background:var(--paper); color:var(--ink); border-radius:4px; font-weight:700; font-size:.75rem; margin:0 4px}
+.status{text-align:center; margin:14px 0 8px; font-weight:700; min-height:1.6em}
+.status.me{color:var(--gold); font-size:1.15rem; animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.hand{display:flex; gap:10px; justify-content:center; margin:8px 0}
+.pc{width:100px; height:140px; border-radius:12px; border:3px solid var(--ink); background:linear-gradient(160deg,#fff7e0,#ecd9ae); color:var(--ink); cursor:pointer; font-family:'Shippori Mincho',serif; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; box-shadow:0 6px 0 #0006; transition:transform .15s,box-shadow .15s}
+.pc:disabled{cursor:default; filter:saturate(.6) brightness(.85)}
+.pc:not(:disabled):hover{transform:translateY(-12px) rotate(-1.5deg); box-shadow:0 14px 0 #0005}
+.pc .v{font-size:2.3rem; font-weight:800; line-height:1.1}
+.pc .d{font-family:'Noto Sans JP'; font-size:.65rem; margin-top:6px; padding:0 6px; line-height:1.3; opacity:.8}
+.pc.plus .v{color:var(--red)} .pc.minus .v{color:var(--blue)}
+.pc.set101{background:linear-gradient(160deg,#ffe29a,#d9a441)} .pc.set101 .v{color:#7a1d16}
+.pc.special .v{font-size:1.5rem; color:var(--purple)}
+.pc.risky::after{content:'危険'; position:absolute; top:-9px; right:-6px; background:var(--red); color:#fff; font-family:'Noto Sans JP'; font-size:.65rem; font-weight:700; padding:2px 7px; border-radius:99px}
+.overlay{position:fixed; inset:0; background:#000a; display:flex; align-items:center; justify-content:center; padding:16px; z-index:10; animation:fade .25s}
+.modal{width:100%; max-width:440px; max-height:90vh; overflow:auto}
+.modal h2{text-align:center; font-size:1.5rem}
+.targets{display:grid; gap:8px}
+.reveal{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; font-size:.75rem}
+.reveal .c{background:#fffaf0; border:1px solid #8a6a3a; border-radius:4px; padding:1px 6px; font-weight:700}
+.rv{margin:6px 0; font-size:.85rem}
+#toast{position:fixed; left:50%; top:14px; transform:translate(-50%,-80px); background:var(--red); color:#fff; padding:10px 18px; border-radius:99px; font-weight:700; z-index:20; transition:transform .3s}
+#toast.show{transform:translate(-50%,0)}
+.win{color:var(--green)} .lose{color:var(--red)}
+@media(max-width:480px){.pc{width:84px;height:120px}.pc .v{font-size:1.9rem}.total{font-size:4.5rem}}
+.deckgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px}
+.dk{display:flex; align-items:center; gap:6px; background:#fffaf0; border:2px solid #8a6a3a; border-radius:8px; padding:5px 8px}
+.dk .dv{font-family:'Shippori Mincho',serif; font-weight:800; font-size:1.05rem; min-width:46px}
+.dk.plus .dv{color:var(--red)} .dk.minus .dv{color:var(--blue)} .dk.set101 .dv{color:#7a1d16} .dk.special .dv{color:var(--purple); font-size:.8rem}
+.dk b{flex:1; text-align:center}
