@@ -64,8 +64,11 @@ function view(r, p) {
   return {
     t: 'state', deckDefs: DECK_DEFS, deckDefault: DECK_DEFAULT, code: r.code, phase: r.phase, hostId: r.hostId, settings: r.settings,
     you: { id: p.id, token: p.token }, hand: p.hand,
+    ready: r.ready ? [...r.ready] : [], readyNeed: r.phase === 'roundEnd' ? readyNeed(r) : [],
     players: r.players.map(q => ({ id: q.id, name: q.name, cpu: q.cpu, chips: q.chips, alive: q.alive, handCount: q.hand.length, connected: q.cpu || q.connected })),
-    total: r.total, dir: r.dir, cur: r.players[r.cur] ? r.players[r.cur].id : null, plays: r.plays,
+    total: r.total, dir: r.dir, cur: r.players[r.cur] ? r.players[r.cur].id : null,
+    nextCur: (r.phase === 'playing' && r.players[r.cur]) ? r.players[r.shotTarget !== null ? r.shotTarget : nextAlive(r, r.cur, r.dir, r.skipNext ? 2 : 1)].id : null,
+    plays: r.plays,
     deckCount: r.deck.length, log: r.log.slice(-8), bust: r.bust, winner: r.winner,
     reveal: ended ? Object.fromEntries(r.players.map(q => [q.id, q.hand])) : null,
   };
@@ -142,12 +145,20 @@ function bust(r, p) {
     r.phase = 'gameOver'; r.winner = alive[0] ? alive[0].name : p.name;
     broadcast(r); return null;
   }
-  r.phase = 'roundEnd'; broadcast(r);
+  r.phase = 'roundEnd'; r.ready = new Set();
   const li = idxOf(r, p.id);
-  const starter = p.alive ? li : nextAlive(r, li, 1, 1);
+  r.nextStarter = p.alive ? li : nextAlive(r, li, 1, 1);
   clearTimeout(r.roundTimer);
-  r.roundTimer = setTimeout(() => { if (r.phase === 'roundEnd') startRound(r, starter); }, 6000);
+  // 全員が「次へ」を押すを待つ(人間がいない/全員脱落なら短い待ち、それ以外は60秒で自動進行)
+  r.roundTimer = setTimeout(() => { if (r.phase === 'roundEnd') startRound(r, r.nextStarter); }, readyNeed(r).length ? 60000 : 4000);
+  broadcast(r);
   return null;
+}
+function readyNeed(r) { return r.players.filter(q => !q.cpu && q.alive && q.connected).map(q => q.id); }
+function checkReady(r) {
+  if (r.phase !== 'roundEnd') return;
+  const need = readyNeed(r);
+  if (need.length && need.every(id => r.ready.has(id))) { clearTimeout(r.roundTimer); startRound(r, r.nextStarter); }
 }
 
 /* ---- CPU ---- */
@@ -173,14 +184,17 @@ function chooseCard(r, p) {
   }
   return best;
 }
+const DISCONNECT_GRACE = 30000; // 切断してからCPUが代打ちするまでの猛予(スマホの一時切断対策)
 function scheduleCpu(r) {
   clearTimeout(r.cpuTimer);
   if (r.phase !== 'playing') return;
   const p = r.players[r.cur];
   if (!(p.cpu || !p.connected)) return;
   const seq = r.seq;
+  const delay = p.cpu ? 1300 : Math.max(900, DISCONNECT_GRACE - (Date.now() - (p.dcAt || 0)));
   r.cpuTimer = setTimeout(() => {
     if (r.phase !== 'playing' || r.seq !== seq || r.players[r.cur] !== p) return;
+    if (!p.cpu && p.connected) return;
     const card = chooseCard(r, p);
     if (!card) return;
     let target = null;
@@ -189,7 +203,7 @@ function scheduleCpu(r) {
       target = others[Math.floor(Math.random() * others.length)].id;
     }
     play(r, p, card.id, target);
-  }, p.cpu ? 1300 : 900);
+  }, delay);
 }
 
 /* ---------------- Rooms / connections ---------------- */
@@ -249,13 +263,13 @@ wss.on('connection', ws => {
           const room = rooms.get(String(m.code || ''));
           const pl = room && room.players.find(q => q.token === m.token && !q.cpu);
           if (!pl) return sendErr(ws, '前回のルームには戻れませんでした', true);
-          pl.ws = ws; pl.connected = true; ws.room = room; ws.player = pl;
+          clearTimeout(pl.dcTimer); pl.ws = ws; pl.connected = true; ws.room = room; ws.player = pl;
           clearTimeout(room.deleteTimer); broadcast(room); scheduleCpu(room); break;
         }
         case 'leave': {
           if (!r) break;
           ws.room = null; ws.player = null;
-          if (r.phase === 'lobby') removePlayer(r, p); else { p.connected = false; p.ws = null; cleanupIfEmpty(r); broadcast(r); scheduleCpu(r); }
+          if (r.phase === 'lobby') removePlayer(r, p); else { p.connected = false; p.ws = null; p.dcAt = 0; cleanupIfEmpty(r); checkReady(r); broadcast(r); scheduleCpu(r); }
           if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'left' }));
           break;
         }
@@ -290,6 +304,19 @@ wss.on('connection', ws => {
           if (err) sendErr(ws, err);
           break;
         }
+        case 'ready': {
+          if (!r || r.phase !== 'roundEnd') break;
+          if (m.force && r.hostId === p.id) {
+            clearTimeout(r.roundTimer);
+            startRound(r, r.nextStarter);
+          } else {
+            if (!r.ready) r.ready = new Set();
+            r.ready.add(p.id);
+            checkReady(r);
+            broadcast(r);
+          }
+          break;
+        }
         case 'again':
           if (!r || r.hostId !== p.id || r.phase !== 'gameOver') break;
           r.players = r.players.filter(q => q.cpu || q.connected);
@@ -302,8 +329,13 @@ wss.on('connection', ws => {
     const r = ws.room, p = ws.player;
     if (!r || !p) return;
     if (p.ws !== ws) return;
-    if (r.phase === 'lobby') removePlayer(r, p);
-    else { p.connected = false; p.ws = null; cleanupIfEmpty(r); broadcast(r); scheduleCpu(r); }
+    p.connected = false; p.ws = null; p.dcAt = Date.now();
+    if (r.phase === 'lobby') {
+      // ロビーでも切断直後には消さず、猛予後に削除
+      clearTimeout(p.dcTimer);
+      p.dcTimer = setTimeout(() => { if (!p.connected && r.players.includes(p) && r.phase === 'lobby') removePlayer(r, p); }, DISCONNECT_GRACE);
+      cleanupIfEmpty(r); broadcast(r);
+    } else { cleanupIfEmpty(r); checkReady(r); broadcast(r); scheduleCpu(r); }
   });
 });
 

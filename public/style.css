@@ -43,8 +43,12 @@ select{padding:6px; border-radius:6px; border:2px solid #8a6a3a; background:#fff
 
 /* table */
 .seats{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:12px}
-.seat{background:#0004; border:2px solid #fff2; border-radius:12px; padding:8px 12px; min-width:92px; text-align:center; transition:.25s}
+.seat{position:relative; background:#0004; border:2px solid #fff2; border-radius:12px; padding:10px 12px 8px; min-width:92px; text-align:center; transition:.25s}
 .seat.cur{border-color:var(--gold); background:#d9a44133; box-shadow:0 0 18px #d9a44188; transform:translateY(-3px)}
+.seat.next{border-color:#5ac8fa; background:#5ac8fa22; box-shadow:0 0 12px #5ac8fa55}
+.turn-badge{position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:.65rem; font-weight:800; padding:2px 8px; border-radius:99px; white-space:nowrap; letter-spacing:.05em}
+.turn-badge.cur{background:var(--gold); color:var(--ink); box-shadow:0 2px 6px #0008; animation:pulse 1.2s infinite}
+.turn-badge.next{background:#5ac8fa; color:#0f283d; box-shadow:0 2px 6px #0008}
 .seat.dead{opacity:.35}
 .seat .n{font-weight:700; font-size:.9rem}
 .chips{display:flex; justify-content:center; gap:4px; margin:4px 0}
@@ -52,6 +56,14 @@ select{padding:6px; border-radius:6px; border:2px solid #8a6a3a; background:#fff
 .chip.off{background:#0003; border-color:#fff3}
 .seat .hc{font-size:.7rem; opacity:.7}
 .felt{background:radial-gradient(ellipse at center,#2f6b45,#1d4630 80%); border:6px solid #5a3a20; border-radius:20px; padding:16px; text-align:center; box-shadow:inset 0 0 40px #0008,0 10px 24px #0008}
+.turn-indicator{display:flex; flex-direction:column; align-items:center; gap:5px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid #ffffff22}
+.dir-badge{display:inline-block; font-size:.76rem; font-weight:700; padding:3px 12px; border-radius:99px; background:#0005; border:1px solid #ffffff33}
+.dir-badge.cw{color:#76ff96; border-color:#76ff9655}
+.dir-badge.ccw{color:#ff9e79; border-color:#ff9e7955}
+.turn-flow-text{display:flex; align-items:center; gap:8px; font-size:.85rem; color:#fff}
+.turn-flow-text b{color:var(--gold)}
+.flow-arrow{color:#5ac8fa; font-size:1.1rem; display:inline-block; animation:arrowBounce 1.2s infinite alternate}
+@keyframes arrowBounce{from{transform:translateX(-2px)}to{transform:translateX(3px)}}
 .total-label{font-size:.8rem; letter-spacing:.3em; opacity:.8}
 .total{font-family:'Shippori Mincho',serif; font-size:5.5rem; font-weight:800; line-height:1; color:#fff; text-shadow:0 4px 0 #0006; transition:color .3s}
 .total.pop{animation:pop .35s}

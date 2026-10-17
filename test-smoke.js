@@ -9,7 +9,14 @@ ws.on('message', raw => {
   if (m.t === 'error') { console.log('ERR', m.msg); return; }
   if (m.t !== 'state') return;
   if (m.phase === 'lobby' && !started) { started = true; send({ t: 'addcpu' }); send({ t: 'addcpu' }); setTimeout(() => send({ t: 'settings', settings: { chips: 1 } }), 100); setTimeout(() => send({ t: 'start' }), 300); return; }
-  if (m.phase !== lastPhase) { if (m.phase === 'roundEnd') rounds++; lastPhase = m.phase; console.log('phase', m.phase, m.bust ? m.bust.name + ' bust@' + m.bust.total : '', m.winner || ''); }
+  if (m.phase !== lastPhase) {
+    if (m.phase === 'roundEnd') {
+      rounds++;
+      setTimeout(() => send({ t: 'ready' }), 200);
+    }
+    lastPhase = m.phase;
+    console.log('phase', m.phase, m.bust ? m.bust.name + ' bust@' + m.bust.total : '', m.winner || '');
+  }
   if (m.phase === 'gameOver') { console.log('GAME OVER winner', m.winner, 'plays', plays, 'handsOK', m.reveal ? 'reveal' : 'noreveal'); process.exit(0); }
   if (m.phase === 'playing' && m.cur === m.you.id && m.hand.length) {
     const c = m.hand[Math.floor(Math.random() * m.hand.length)];
