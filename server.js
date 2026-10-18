@@ -3,6 +3,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { WebSocketServer } = require('ws');
+const { chooseCardSmart, chooseShotTarget } = require('./cpu');
 
 const PORT = process.env.PORT || 3000;
 const PUB = path.join(__dirname, 'public');
@@ -152,7 +153,7 @@ function bust(r, p) {
   r.nextStarter = p.alive ? li : nextAlive(r, li, 1, 1);
   clearTimeout(r.roundTimer);
   // 全員が「次へ」を押すを待つ(人間がいない/全員脱落なら短い待ち、それ以外は60秒で自動進行)
-  r.roundTimer = setTimeout(() => { if (r.phase === 'roundEnd') startRound(r, r.nextStarter); }, readyNeed(r).length ? 60000 : 4000);
+  r.roundTimer = r.manual ? null : setTimeout(() => { if (r.phase === 'roundEnd') startRound(r, r.nextStarter); }, readyNeed(r).length ? 60000 : 4000);
   broadcast(r);
   return null;
 }
@@ -164,7 +165,8 @@ function checkReady(r) {
 }
 
 /* ---- CPU ---- */
-function chooseCard(r, p) {
+// 旧アルゴリズム(比較用に残す): 特殊カードを早めに使ってしまう
+function chooseCardBasic(r, p) {
   const limit = r.settings.bust101 ? 100 : 101;
   let best = null, bestScore = -Infinity;
   for (const c of p.hand) {
@@ -187,30 +189,40 @@ function chooseCard(r, p) {
   return best;
 }
 const DISCONNECT_GRACE = 30000; // 切断してからCPUが代打ちするまでの猛予(スマホの一時切断対策)
+const CPU_DELAY = Number(process.env.NEU_CPU_DELAY) || 1300;
+// CPU(と切断中プレイヤーの代打ち)が選ぶカードとSHOTの指名先
+function cpuDecide(r, p) {
+  const card = p.strategy === 'basic' ? chooseCardBasic(r, p) : chooseCardSmart(r, p, DECK_DEFS);
+  if (!card) return null;
+  let target = null;
+  if (card.kind === 'shot') {
+    if (p.strategy === 'basic') { const o = alivePlayers(r).filter(q => q !== p); target = o[Math.floor(Math.random() * o.length)].id; }
+    else target = chooseShotTarget(r, p);
+  }
+  return { card, target };
+}
 function scheduleCpu(r) {
   clearTimeout(r.cpuTimer);
-  if (r.phase !== 'playing') return;
+  if (r.manual || r.phase !== 'playing') return;
   const p = r.players[r.cur];
   if (!(p.cpu || !p.connected)) return;
   const seq = r.seq;
-  const delay = p.cpu ? 1300 : Math.max(900, DISCONNECT_GRACE - (Date.now() - (p.dcAt || 0)));
+  const delay = p.cpu ? CPU_DELAY : Math.max(900, DISCONNECT_GRACE - (Date.now() - (p.dcAt || 0)));
   r.cpuTimer = setTimeout(() => {
     if (r.phase !== 'playing' || r.seq !== seq || r.players[r.cur] !== p) return;
     if (!p.cpu && p.connected) return;
-    const card = chooseCard(r, p);
-    if (!card) return;
-    let target = null;
-    if (card.kind === 'shot') {
-      const others = alivePlayers(r).filter(q => q !== p);
-      target = others[Math.floor(Math.random() * others.length)].id;
-    }
-    play(r, p, card.id, target);
+    const d = cpuDecide(r, p);
+    if (d) play(r, p, d.card.id, d.target);
   }, delay);
 }
 
 /* ---------------- Rooms / connections ---------------- */
 function newPlayer(name, ws, cpu) {
   return { id: rid(), token: rid(), name: String(name || 'プレイヤー').slice(0, 10), cpu: !!cpu, ws: ws || null, connected: !cpu, chips: 3, alive: true, hand: [] };
+}
+function makeRoom(code, host) {
+  return { code, players: [host], hostId: host.id, phase: 'lobby', settings: { passSkip: false, bust101: false, chips: 3, deck: { ...DECK_DEFAULT } },
+    deck: [], discard: [], total: 0, dir: 1, cur: 0, plays: 1, nextPlays: 1, shotTarget: null, skipNext: false, log: [], bust: null, winner: null, seq: 0 };
 }
 function humans(r) { return r.players.filter(p => !p.cpu); }
 function cleanupIfEmpty(r) {
@@ -249,8 +261,7 @@ wss.on('connection', ws => {
         case 'create': {
           const code = makeCode();
           const pl = newPlayer(m.name, ws);
-          const room = { code, players: [pl], hostId: pl.id, phase: 'lobby', settings: { passSkip: false, bust101: false, chips: 3, deck: { ...DECK_DEFAULT } },
-            deck: [], discard: [], total: 0, dir: 1, cur: 0, plays: 1, nextPlays: 1, shotTarget: null, skipNext: false, log: [], bust: null, winner: null, seq: 0 };
+          const room = makeRoom(code, pl);
           rooms.set(code, room); ws.room = room; ws.player = pl; broadcast(room); break;
         }
         case 'join': {
@@ -341,4 +352,7 @@ wss.on('connection', ws => {
   });
 });
 
-server.listen(PORT, () => console.log(`NEU server on http://localhost:${PORT}`));
+if (require.main === module) server.listen(PORT, () => console.log(`NEU server on http://localhost:${PORT}`));
+
+// シミュレーション/テスト用
+module.exports = { makeRoom, newPlayer, startGame, startRound, play, cpuDecide, chooseCardBasic, DECK_DEFS };

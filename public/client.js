@@ -60,6 +60,8 @@
   function render() {
     const home = $('#home'), view = $('#view');
     clearInterval(countdownT);
+    // 手札ボタンを作る前に送信ロックを解除する(DOUBLEの2枚目が操作不能にならないように)
+    isSubmitting = false; clearTimeout(unlockT);
     if (!S) { home.hidden = false; view.hidden = true; return; }
     home.hidden = true; view.hidden = false;
     view.innerHTML = S.phase === 'lobby' ? lobbyHTML() : tableHTML();
@@ -191,10 +193,11 @@
     return '';
   }
 
-  let isSubmitting = false;
+  let isSubmitting = false, unlockT = null;
+  // サーバーから状態が返らなかった場合の保険: 3秒後にロックを解除して再描画
+  const lockSubmit = () => { isSubmitting = true; clearTimeout(unlockT); unlockT = setTimeout(() => { if (isSubmitting && S) render(); }, 3000); };
 
   function bind() {
-    isSubmitting = false;
     const q = s => document.querySelector(s);
     const on = (s, fn) => { const e = q(s); if (e) e.onclick = fn; };
     on('#leave', () => { if (confirm('退出しますか?')) send({ t: 'leave' }); });
@@ -222,14 +225,14 @@
       if (c.kind === 'shot') { 
         shotCard = id; render(); 
       } else { 
-        isSubmitting = true;
+        lockSubmit();
         send({ t: 'play', cardId: id });
         b.disabled = true;
       }
     });
     document.querySelectorAll('[data-target]').forEach(b => b.onclick = () => {
       if (isSubmitting) return;
-      isSubmitting = true;
+      lockSubmit();
       send({ t: 'play', cardId: shotCard, target: b.dataset.target }); 
       shotCard = null;
     });
