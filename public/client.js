@@ -11,7 +11,10 @@
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
   }
 
+  let reconnectT = null;
   function connect() {
+    clearTimeout(reconnectT);
+    if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
     ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
     ws.onopen = () => {
       const s = JSON.parse(localStorage.getItem('neu-session') || 'null');
@@ -24,14 +27,19 @@
         render();
       } else if (m.t === 'error') {
         toast(m.msg); if (m.clear) localStorage.removeItem('neu-session');
+        // カード送信が拒否されたときに操作不能にならないよう、ロックを解除して再描画
+        if (isSubmitting) { isSubmitting = false; if (S) render(); }
       } else if (m.t === 'left') {
         S = null; localStorage.removeItem('neu-session'); render();
       }
     };
-    ws.onclose = () => setTimeout(connect, 1500);
+    ws.onclose = () => { clearTimeout(reconnectT); reconnectT = setTimeout(connect, 1500); };
   }
   connect();
   setInterval(() => send({ t: 'ping' }), 25000);
+  // スマホでアプリ切替後に戻ったとき、切断されていればすぐ再接続する
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') connect(); });
+  window.addEventListener('online', connect);
 
   $('#btn-create').onclick = () => send({ t: 'create', name: getName() });
   $('#btn-join').onclick = () => send({ t: 'join', code: $('#code').value, name: getName() });

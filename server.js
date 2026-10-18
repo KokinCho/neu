@@ -67,7 +67,9 @@ function view(r, p) {
     ready: r.ready ? [...r.ready] : [], readyNeed: r.phase === 'roundEnd' ? readyNeed(r) : [],
     players: r.players.map(q => ({ id: q.id, name: q.name, cpu: q.cpu, chips: q.chips, alive: q.alive, handCount: q.hand.length, connected: q.cpu || q.connected })),
     total: r.total, dir: r.dir, cur: r.players[r.cur] ? r.players[r.cur].id : null,
-    nextCur: (r.phase === 'playing' && r.players[r.cur]) ? r.players[r.shotTarget !== null ? r.shotTarget : nextAlive(r, r.cur, r.dir, r.skipNext ? 2 : 1)].id : null,
+    nextCur: (r.phase === 'playing' && r.players[r.cur])
+      ? (r.plays > 1 ? r.players[r.cur].id : r.players[r.shotTarget !== null ? r.shotTarget : nextAlive(r, r.cur, r.dir, r.skipNext ? 2 : 1)].id)
+      : null,
     plays: r.plays,
     deckCount: r.deck.length, log: r.log.slice(-8), bust: r.bust, winner: r.winner,
     reveal: ended ? Object.fromEntries(r.players.map(q => [q.id, q.hand])) : null,
